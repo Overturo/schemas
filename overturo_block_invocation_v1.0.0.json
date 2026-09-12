@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.overturo.com/overturo_block_invocation_v1.0.0.json",
+  "title": "OverturoBlockInvocation",
+  "description": "One Conductor cascade block invocation. Surfaced in the OverturoDecision.block_invocations array when the caller opts into decomposition.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["position", "block_slug", "decision", "latency_ms", "evaluator_class"],
+  "properties": {
+    "position": {
+      "type": "integer",
+      "minimum": 7,
+      "maximum": 15,
+      "description": "Cascade position (7-15; positions 6 and 12 are reserved per Oap::CascadeStep)."
+    },
+    "block_slug": {
+      "type": "string",
+      "description": "Conductor block slug, e.g. 'conductor.policy_gate'."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["pass", "deny", "escalate", "dispatch_error"],
+      "description": "Block invocation outcome."
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Block invocation wall-clock latency."
+    },
+    "evaluator_class": {
+      "type": "string",
+      "description": "FQDN of the evaluator class that produced this decision (BuiltinEvaluator or customer-extended)."
+    },
+    "policy_engine": {
+      "type": ["string", "null"],
+      "description": "Customer-provided free-string label naming the policy engine. 'unknown' for built-in evaluators."
+    },
+    "cache_outcome": {
+      "type": ["string", "null"],
+      "enum": ["hit", null],
+      "description": "Set to 'hit' when the decision cache served this invocation; null otherwise."
+    },
+    "reason_code": {
+      "type": ["string", "null"],
+      "description": "Set ONLY on decision=deny. Closed enum from Oap::Errors::REASON_CODES."
+    },
+    "failed_bound": {
+      "type": ["string", "null"],
+      "description": "Set ONLY on decision=deny. Which bound triggered the deny (scope_bounds, action_bounds, etc.)."
+    }
+  }
+}

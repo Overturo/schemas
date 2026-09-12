@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.overturo.com/overturo_decision_v1.0.0.json",
+  "title": "OverturoDecision",
+  "description": "Canonical Overturo decision shape. Shared across overturo-authorize-{py,js} and overturo-oversight-{py,js} SDKs. Wire response body conforms additively (existing fields like iss/oap_ver are preserved).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["decision", "mode", "request_id", "overturo_decision_schema_version"],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "deny", "escalate"],
+      "description": "Top-level cascade outcome."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["conductor", "oversight", "hybrid"],
+      "description": "Server-resolved application mode at decision time."
+    },
+    "reason_code": {
+      "type": ["string", "null"],
+      "description": "Closed enum from Oap::Errors::REASON_CODES; set on deny."
+    },
+    "denial_category": {
+      "type": ["string", "null"],
+      "description": "One of authorization_denied | intent_denied | trajectory_denied."
+    },
+    "cascade_step": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 15,
+      "description": "Position at which the cascade decided (set on deny)."
+    },
+    "failed_bound": {
+      "type": ["string", "null"]
+    },
+    "block_invocations": {
+      "type": "array",
+      "description": "Per-position cascade evaluations in ascending position order. Empty when decomposition was not opted in.",
+      "items": {"$ref": "overturo_block_invocation_v1.0.0.json"}
+    },
+    "escalation": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "escalation_id": {"type": "string"},
+        "required_signers": {"type": "array", "items": {"type": "string"}},
+        "approval_ttl_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "receipt": {
+      "type": ["object", "string", "null"],
+      "description": "On allow: server returns the JWT as a String at the existing 'receipt' field; SDKs MAY wrap it into an object alongside receipt_jti/iat/exp. Schema accepts both shapes for backward compatibility.",
+      "additionalProperties": true,
+      "properties": {
+        "jwt": {"type": "string"},
+        "jti": {"type": "string"},
+        "iat": {"type": "integer"},
+        "exp": {"type": "integer"}
+      }
+    },
+    "decision_latency_ms": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Server-measured controller-entry-to-render wall clock. Null on deny path (latency unmeasured)."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Rails request.request_id echo. Also returned in X-Request-Id response header."
+    },
+    "chronicle_id": {
+      "type": ["string", "null"]
+    },
+    "overturo_decision_schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    }
+  }
+}
