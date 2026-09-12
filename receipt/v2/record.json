@@ -1,0 +1,734 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://overturo.com/schemas/receipt/v2/record.json",
+  "title": "Overturo consent record (overturo-cr/2.9)",
+  "description": "The canonical record frozen at fulfillment, organized into the ISO/IEC TS 27560:2023 sections, in three kinds: consent records; notice records (notice-not-consent mechanisms and anonymous completions; Kantara ANCR Stage-1 aligned); and authorization records. The `extensions` member carries platform facts the standard has no slot for, per the standards' own non-conflicting-additions allowance. Renders add a render-time `receipt_metadata` section NOT described here: the frozen record never carries render state. The authorization_record kind is durable evidence of a delegated-authority commitment. Its `authority` section is 27560-ALIGNED structure, not PII-processing subject matter; conformance language applies only to records carrying a pii_processing section.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record",
+    "party_identification",
+    "event",
+    "extensions"
+  ],
+  "properties": {
+    "record": {
+      "description": "The record's identity: the schema version it follows, the standard it conforms to, the record identifier, the kind, and whether the record is anonymous.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "conforms_to",
+        "record_id"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "overturo-cr/2.9"
+        },
+        "conforms_to": {
+          "const": "ISO/IEC TS 27560:2023"
+        },
+        "record_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The unique, stable identifier of this record — the receipt's identity across every channel and export flavor, and the record-specific identifier that stands in for the principal on anonymous records."
+        },
+        "record_type": {
+          "enum": [
+            "consent_record",
+            "notice_record",
+            "authorization_record"
+          ],
+          "description": "The receipt kind. notice_record covers notice-not-consent mechanisms (informed, documented) and anonymous completions; its event section carries notice events, never a consent-given event. Absent on records issued before this field existed: read as consent_record. authorization_record covers delegated-authority commitments: it requires the authority section, carries pii_processing exactly when declared purposes exist, and its event section uses authority states."
+        },
+        "anonymous": {
+          "const": true,
+          "description": "Kantara ANCR Stage 1 — emitted (true only) when the subject completed without an established identity. The record-specific identifier standing in for the principal is record_id itself; pii_principal_id is FORBIDDEN below."
+        },
+        "pii_principal_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The principal reference. Required for identified records; forbidden for anonymous ones (the conditional below validates the rule — anonymity is enforced, not conventioned)."
+        }
+      },
+      "if": {
+        "required": [
+          "anonymous"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "pii_principal_id"
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "pii_principal_id"
+        ]
+      }
+    },
+    "pii_processing": {
+      "description": "The granted purposes with their decision-time facts: language and jurisdiction, the notice as presented, the collection method, each purpose's lawful basis, categories, retention, storage and recipients, and how consent is withdrawn.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "jurisdiction",
+        "purposes"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The language the decision was presented in (locale code). Frozen labels throughout the record are in this language."
+        },
+        "jurisdiction": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The jurisdiction governing this processing, as configured by the organization; \"unspecified\" when none is declared."
+        },
+        "privacy_notice": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The VERSIONED notice reference (ISO/IEC TS 27560 clause 6.3.4.2/clause 6.2.2.6): the notice as presented, content-addressed. The hashed content set is exactly {locale, presentation title+description, policy_url, flow-visible purpose rows (name/label/description/mechanism/required, sorted by name)} — canonical deep-sorted JSON, sha256; growing the set is a schema minor, never silent. Three shapes coexist: locally-authored records always carry reference+hash (+url when the organization declared a policy URL); cross-region records carry what the authoring region's offer sent; records upgraded from the earlier flat shape carry url only (nothing is fabricated). Absent only for cross-region offers that predate this field and declared no policy URL.",
+          "properties": {
+            "reference": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The unique version reference: <flow_id>/notice/v<n>."
+            },
+            "hash": {
+              "type": "string",
+              "minLength": 1,
+              "description": "sha256:<hex> over the canonical content set."
+            },
+            "url": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The organization's declared privacy policy URL, when one exists."
+            }
+          }
+        },
+        "collection_method": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "How the decision was collected, as shown to the subject (ISO/IEC TS 27560 clause 6.3.4.9) — the human-readable form of extensions.collection_mechanism."
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "purpose",
+              "purpose_id"
+            ],
+            "properties": {
+              "purpose": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The purpose label exactly as presented to the subject at decision time, in the record's language."
+              },
+              "purpose_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The stable machine identifier of the purpose (also the key scoped withdrawal events reference)."
+              },
+              "description": {
+                "type": "string",
+                "description": "The purpose description as presented at decision time, when the organization declared one."
+              },
+              "lawful_basis": {
+                "type": "string",
+                "description": "The lawful basis for this purpose (ISO/IEC TS 27560 clause 6.3.4.7), as a human-readable label frozen at decision time."
+              },
+              "consent_mechanism": {
+                "type": "string",
+                "description": "How consent for this purpose was collected, as a human-readable label — one flow can mix mechanisms per purpose."
+              },
+              "pii_category": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Human-readable categories of the personal data this purpose covers (ISO/IEC TS 27560 clause 6.3.4.10) — the display projection of pii_information."
+              },
+              "retention_period": {
+                "type": "string",
+                "minLength": 1,
+                "description": "ISO 8601 duration from the purpose's declared retention period (27560 6.3.4.13); honest-absent when the purpose declares none."
+              },
+              "purpose_type": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The canonical purpose-taxonomy domain (27560 6.3.4.6); honest-absent for custom purposes outside the taxonomy."
+              },
+              "pii_information": {
+                "type": "array",
+                "minItems": 1,
+                "description": "Structured attributes (27560 Table 3) — the source data behind pii_category (one derivation feeds both; no divergence possible). Per-attribute sensitive/special flags are documented-absent in v1.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pii_type"
+                  ],
+                  "properties": {
+                    "pii_type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Human-readable name of the personal-data attribute."
+                    },
+                    "pii_attribute_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The stable machine identifier of the attribute (the platform permission name)."
+                    },
+                    "pii_optional": {
+                      "type": "boolean",
+                      "description": "Whether the subject could complete the decision without granting this attribute."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "The GRANTED purposes only, with their decision-time labels frozen (ISO/IEC TS 27560 clause 6.3.4.5). Purposes declined or later revoked do not appear here; revocations appear in the event lifecycle and the render-time status."
+        },
+        "storage_locations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "Where the data is stored (ISO country codes) — derived from the platform's residency rules (where the subject's data lives), never declared by hand."
+        },
+        "processing_locations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "Present only when recorded lawful-transfer bases exist for the flow: their destination jurisdictions. Absent means no recorded cross-border processing."
+        },
+        "withdrawal_method": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The stable, credential-free entry point for withdrawing consent (27560 6.3.4.19). Never a minted access token: tokens expire, receipts do not."
+        },
+        "recipient_third_parties": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Party ids of third-party recipients (each has a corresponding party_identification row — 27560 6.3.4.18). An EMPTY array asserts nothing is shared; an ABSENT key means the platform cannot enumerate recipients completely (e.g. externally-configured webhooks) and stays silent rather than implying completeness."
+        },
+        "privacy_rights": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "Where the subject exercises their rights (27560 6.3.4.20): the stable access entry and, for full accounts, the self-service export. String encoding per the standard; labels live in the rendering layer."
+        },
+        "processing_method": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "How the PII is processed (27560 6.3.4.11): the ENFORCED capability identifiers from the activation-frozen composition snapshot (signed with the flow). Identifiers only, never configuration. Absent for flows without a composition."
+        },
+        "impact_assessment": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to the organization's completed legitimate-interest assessment (27560 6.3.4.22), emitted only when a granted purpose runs on legitimate interest and exactly one active assessment exists."
+        }
+      }
+    },
+    "party_identification": {
+      "type": "array",
+      "description": "The controller (declared legal identity when the org completed its controller identity record — provenance 'declared'; display-name fallback otherwise), the platform processor row, and the catalogued supervisory authority. Identity data is DECLARED by the organization, never verified by the platform. party_role values in use: controller, processor, supervisory_authority (string-typed — later members may add roles).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "party_id",
+          "party_name",
+          "party_role"
+        ],
+        "properties": {
+          "party_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's stable public identifier — for the controller, the application identifier the transparency record is keyed by; for recipients, the pointer recipient_third_parties references."
+          },
+          "party_name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's name: the declared legal name where an identity record exists (provenance \"declared\"), else the display name."
+          },
+          "party_role": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's role in this processing: controller, processor, supervisory_authority, recipient - or, on authorization records, principal (a co-signing grantor) and agent (the authorized software agent)."
+          },
+          "party_type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Whether the party is an organization, a natural person, or a software_agent. Persons are never emitted as recipients."
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "display_name",
+              "declared"
+            ]
+          },
+          "party_address": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "street_address": {
+                "type": "string",
+                "description": "Street address line of the party's declared postal address."
+              },
+              "locality": {
+                "type": "string",
+                "description": "City or locality of the declared postal address."
+              },
+              "region": {
+                "type": "string",
+                "description": "State, province, or region line of the declared postal address."
+              },
+              "postal_code": {
+                "type": "string",
+                "description": "Postal code of the declared postal address."
+              },
+              "country": {
+                "type": "string",
+                "description": "Country of the declared postal address (ISO country code)."
+              }
+            }
+          },
+          "party_email": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's declared contact email for privacy matters (ISO/IEC TS 27560 clause 6.3.6; the Kantara CR v1.1 required contact)."
+          },
+          "party_phone": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's declared contact phone for privacy matters."
+          },
+          "party_url": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The party's declared contact or informational URL."
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "withdrawal_method"
+      ],
+      "description": "Authorization records only. States the enforced grant verbatim: each bound dimension appears exactly when the platform enforces it - absence means not configured, never 'unlimited'. Bound-dimension inner shapes are owned by the platform's authority-bounds vocabulary; this schema constrains presence, not structure.",
+      "properties": {
+        "scope_bounds": {
+          "type": "object",
+          "description": "Which data scopes the agent may access or share (allowed/denied lists), as enforced."
+        },
+        "action_bounds": {
+          "type": "object",
+          "description": "Which operations the agent may perform (allowed/denied verb lists), as enforced."
+        },
+        "value_bounds": {
+          "type": "object",
+          "description": "Financial ceilings — per transaction and cumulative, with currency — as enforced."
+        },
+        "time_bounds": {
+          "type": "object",
+          "description": "The operating window (active days/hours) and hard expiry, as enforced."
+        },
+        "escalation_bounds": {
+          "type": "object",
+          "description": "Thresholds that force the agent to defer to its principal (approval triggers), as enforced."
+        },
+        "reputation_bounds": {
+          "type": "object",
+          "description": "Minimum counterparty trust requirements the agent must respect, as enforced."
+        },
+        "jurisdiction_bounds": {
+          "type": "object",
+          "description": "The jurisdictions the agent may act toward, as enforced at authorization time."
+        },
+        "sequence_bounds": {
+          "type": "object",
+          "description": "The eighth enforced dimension, carried on its own grant column; present only when configured."
+        },
+        "valid_from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The declared start of the authority (ISO 8601)."
+        },
+        "valid_until": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The declared end of the authority (ISO 8601); absent for open-ended grants."
+        },
+        "cooling_off": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ISO 8601 duration between commitment and activation; present only when an activation delay existed."
+        },
+        "withdrawal_method": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable revocation entry URL; never embeds a credential - the principal authenticates on arrival."
+        }
+      }
+    },
+    "event": {
+      "type": "array",
+      "description": "The lifecycle as a projection of the platform's existing evidence (tamper-evident audit-trail records, transaction timestamps) — never a new event store. Consent records freeze the pre-decision prefix (notice shown, consent requested) plus the given event, in canonical lifecycle order; notice records freeze notice vocabulary instead — see event_state. Renders append post-decision transitions (withdrawn — optionally scoped by purpose_id — and expired) derived at read time. Arrays are heterogeneous by construction: flows whose delivery path does not record an opening start at \"consent requested\"; records issued before the lifecycle section existed start at \"consent given\"; system-mediated records are notice records carrying the single constructive \"notice shown\". \"consent refused\" is defined but unissued in v1 (records exist only for completed decisions; refusal evidence belongs to the notice-receipt track). States \"consent invalidated\" and \"consent halted\" remain reserved: no platform transition claims them yet. Actor attribution: the principal for given/withdrawn/acknowledged (anonymous records substitute record_id); the controller (application) for notice shown/requested; the platform processor for expiry. Authorization records: the frozen prefix carries 'authority requested' and 'authority granted'; renders append the lifecycle derived from existing evidence (the grant's chronicle trail, the receipt-consumption aggregate) — 'authority exercised' rows are AGGREGATES (see occurrences), suspension/resumption pairs are dated history, approvals carry the human decision with real attribution, and 'authority expired' is suppressed after a revocation. Records frozen before lifecycle events were recorded start at 'authority granted' (frozen means frozen). Histories without audit-trail records emit only what their columns can date.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_time",
+          "entity_id",
+          "event_type",
+          "event_state"
+        ],
+        "properties": {
+          "event_time": {
+            "type": "string",
+            "minLength": 1,
+            "description": "When the event occurred (ISO 8601). Times come from platform evidence — never synthesized."
+          },
+          "validity_duration": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ISO 8601 duration (exact, second precision), present only when the consent carries an expiry."
+          },
+          "entity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Who acted: the principal reference for given/withdrawn/acknowledged (anonymous records substitute record_id), the application for notice shown/requested, the platform processor for expiry."
+          },
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "implicit",
+              "regular"
+            ]
+          },
+          "event_state": {
+            "type": "string",
+            "enum": [
+              "notice shown",
+              "notice acknowledged",
+              "consent requested",
+              "consent given",
+              "consent refused",
+              "consent withdrawn",
+              "consent expired",
+              "authority requested",
+              "authority granted",
+              "authority exercised",
+              "authority suspended",
+              "authority resumed",
+              "authority revoked",
+              "authority expired",
+              "approval requested",
+              "approval granted",
+              "approval denied",
+              "approval countered"
+            ],
+            "description": "Notice records map evidence to notice vocabulary: interactive flows carry notice shown (from the display evidence) + notice acknowledged (completion, entity = principal or, for anonymous records, record_id); system/documented records carry a single constructive notice shown (entity = the application) and no acknowledged row. Notice records never carry consent given."
+          },
+          "purpose_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Present only on a scoped withdrawal: the withdrawn purpose's purpose_id (matches pii_processing.purposes[].purpose_id). Absent on record-level events."
+          },
+          "record_reference": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Re-affirmation linkage (Annex B re-confirm): on a given event, the record_id of the predecessor record this consent supersedes. The predecessor's render carries the inverse reference in receipt_metadata (render state, not frozen)."
+          },
+          "occurrences": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Aggregate rows only (authority exercised): the authority was exercised this many times, most recently at event_time. Never present on single-occurrence events."
+          },
+          "approval_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Approval-scoped rows: the public reference of the human decision, matching the oversight evidence package's rows. Requested rows may lack it (the reference exists only once the decision row does)."
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Documented platform extensions (Kantara CR v1.1 clause 4.2; ISO/IEC TS 27560 clause 6.3.2.2): facts the standard has no slot for. Every key is documented here; nothing standard-named carries non-standard semantics.",
+      "additionalProperties": false,
+      "properties": {
+        "collection_mechanism": {
+          "type": "string",
+          "enum": [
+            "explicit",
+            "informed",
+            "opt_out",
+            "documented",
+            "delegated"
+          ],
+          "description": "The raw platform consent-mechanism value; pii_processing.collection_method carries the human label."
+        },
+        "delivery_mode": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How the decision surface was delivered: redirect, embed, popup, or link."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The effective granted platform permissions at fulfillment — operational grant state, distinct from the purpose grants above."
+        },
+        "sensitive": {
+          "type": "boolean",
+          "description": "True when the flow collected at least one field the organization classified at a sensitive level."
+        },
+        "consent_flow_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The stable public identifier of the flow (the versioned notice reference is rooted in it)."
+        },
+        "grant_integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canonical_hash"
+          ],
+          "description": "Authorization records only: the reference to the grant's dual signature - content hash + key versions. The signatures themselves are the signed-export payload, never inlined here.",
+          "properties": {
+            "canonical_hash": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Content hash of the committed grant, computed at attestation time."
+            },
+            "principal_key_version": {
+              "type": "string",
+              "description": "Key version of the principal-side signature the hash was signed under."
+            },
+            "platform_key_version": {
+              "type": "string",
+              "description": "Key version of the platform-side signature the hash was signed under."
+            }
+          }
+        },
+        "delegation_chain_root": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Authorization records only: the root commitment's record reference when this authority was sub-delegated. Absent for root grants."
+        },
+        "capability_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reference",
+            "hash"
+          ],
+          "description": "Authorization records only: the capability-manifest version the grant was made against — the agent's declaration, content-addressed. The hashed content set is exactly {agent_type, name, delegated_scopes (sorted), and the operator-declared disclosure metadata: capabilities, operator_name, privacy_policy_url, data_storage, retention_period} — canonical deep-sorted JSON, sha256; growing the set is a schema minor, never silent. agent_type/name/delegated_scopes are platform-attested registration facts; the metadata keys are operator-DECLARED (the hash anchors what was declared, not that it is true). A model/version fingerprint has no substrate field today and is documented-absent from the set. Manifest drift is AGENT-side (what the agent declares); composition drift is FLOW-side (what a flow executes) — separate mechanisms, never conflated. Absent on records frozen before manifest pinning existed and when no unique agent resolves. Pinned at freeze; supersession never rewrites it (renders overlay manifest_superseded instead).",
+          "properties": {
+            "reference": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The versioned natural-key reference (\"<agent_id>/manifest/v<n>\") resolvable at the published manifests route under the agent's transparency record."
+            },
+            "hash": {
+              "type": "string",
+              "minLength": 1,
+              "description": "sha256 content hash (\"sha256:<hex>\") of the canonical deep-sorted declaration set — recompute over the published version content to verify."
+            }
+          }
+        },
+        "accountability_record": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Structural slot: the agent accountability record reference in effect at activation. Documented-absent until that member ships."
+        },
+        "agent_disclosures": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Consent and notice records only: the AI agents disclosed to the human this record belongs to — one entry per agent, EU AI Act Art. 50 aligned. A disclosure entry proves NOTICE (the human was told), never grant or authority: the commitment story lives in authorization records, and this array is schema-forbidden there. Present exactly when the flow disclosed agents (platform provenance) or the operator declared an out-of-band disclosure (declared provenance). Carries agent-side references only — never the counterparty's identity (the anonymous kind stays anonymous through these fields).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "agent",
+              "accountability_record",
+              "delivery_provenance",
+              "disclosed_at"
+            ],
+            "properties": {
+              "agent": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The disclosed agent's public identifier."
+              },
+              "accountability_record": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The agent's accountability record URL — 'operated by X' is resolvable, not just asserted, including after revocation (revocation never un-publishes)."
+              },
+              "capability_manifest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reference",
+                  "hash"
+                ],
+                "description": "The capability-manifest version anchoring what the human was told about the agent — the disclosure card renders exactly the manifest's content set, so the manifest hash IS the disclosure-content hash (one content-address discipline, not a third). Optional: absent when no manifest applies, never fabricated.",
+                "properties": {
+                  "reference": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The versioned natural-key reference resolvable at the published manifests route."
+                  },
+                  "hash": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "sha256 content hash of the canonical declaration set — recompute over the published version content to verify."
+                  }
+                }
+              },
+              "delivery_provenance": {
+                "enum": [
+                  "platform",
+                  "declared"
+                ],
+                "description": "How the disclosure reached the human. 'platform': it rode a surface the platform itself rendered (the flow's agent-disclosure card) — the platform states it showed this. 'declared': the OPERATOR declared an out-of-band disclosure via API — the platform records the declaration and never certifies what it did not deliver (the declared posture: recorded, never certified). The two are never blurred; the API path cannot produce 'platform'."
+              },
+              "disclosed_at": {
+                "type": "string",
+                "minLength": 1,
+                "description": "When the disclosure happened: the fulfillment moment on the platform path; the operator's declared timestamp on the declared path."
+              }
+            }
+          }
+        },
+        "signature_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Signing-party verification evidence: one entry per completed evidence envelope anchored to the signing party, sorted by completed_at. Pointer + digest only — verdict/claim CONTENT lives in the agreement export and evidence packages, never here. Present on consent records only, and only when the signing party's transaction carries completed evidence; honest-absent otherwise.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scheme",
+              "method",
+              "provider",
+              "status",
+              "evidence_digest",
+              "completed_at"
+            ],
+            "properties": {
+              "scheme": {
+                "enum": [
+                  "qualified_signature",
+                  "role_verification",
+                  "verified_presentation"
+                ],
+                "description": "The evidence scheme: qualified_signature (a legally-recognized signature leg), role_verification (a verified organizational role), or verified_presentation (a verified digital credential)."
+              },
+              "method": {
+                "enum": [
+                  "oid4vp_sd_jwt_vc",
+                  "vlei_verdict",
+                  "qualified_signature"
+                ],
+                "description": "The verification method that produced the evidence, one per scheme."
+              },
+              "provider": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The provider that produced the evidence."
+              },
+              "status": {
+                "const": "completed",
+                "description": "Only completed evidence is referenced; pending or failed evidence never appears."
+              },
+              "evidence_digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "description": "sha256 over the canonical (deep-sorted JSON) evidence for this envelope — a content pointer, never the content. FREEZE-TIME-SCOPED: a point-in-time pointer computed when this record was frozen, not a live recompute target. Evidence stamped onto the envelope AFTER completion (e.g. a later revocation notice) is separate and does not retroactively change this digest; recomputing over the live envelope may therefore differ, by design."
+              },
+              "completed_at": {
+                "type": "string",
+                "minLength": 1,
+                "description": "When the evidence completed (ISO 8601); the entries are sorted ascending by this value."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "record": {
+            "properties": {
+              "record_type": {
+                "const": "authorization_record"
+              }
+            },
+            "required": [
+              "record_type"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "authority"
+        ],
+        "properties": {
+          "extensions": {
+            "properties": {
+              "agent_disclosures": false
+            }
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "pii_processing"
+        ],
+        "properties": {
+          "authority": false
+        }
+      }
+    }
+  ]
+}
