@@ -8,6 +8,48 @@ holds the head entry's digest equal to the served file. Entries before
 governance starts with the entry above them. Versions 2.1 and 2.2 were never
 published.
 
+## overturo-cr/2.12 — 2026-10-12 (additive)
+
+Compatibility: additive.
+
+- `extensions.collection_channel`: two values, `embedded_field` and
+  `embedded_field_browser`, for a control Overturo rendered inside the
+  organisation's own form (committed by its server, or by the browser); the
+  description now states which channels are Overturo-rendered.
+- `extensions.rendering_evidence`: present only for those channels — who
+  rendered the control, the notice version shown, when, the host page's origin
+  as the browser asserted it, whether the person changed the control with a
+  trusted gesture, and the control's visibility at submit with the kind of
+  measurement the browser offered.
+
+Schema digest: sha256:e871b444a0f3cf1222840618bc860a4523c851fd4ac9ff50e6185c99d35f7cfb
+
+## overturo-cr/2.11 — 2026-10-12 (additive)
+
+Compatibility: additive.
+
+- `extensions.captured_at`, `extensions.recorded_at`: the organisation's capture
+  time beside the platform's recording time for a captured record (an import
+  keeps its original capture time; the duration counts from it).
+- `extensions.presentation_attested`: the purposes whose optional presentation
+  the organisation attested rather than the platform read.
+- `extensions.wording_drift.purposes`: both digests and the verdict per purpose
+  when the wording was attested purpose by purpose.
+
+Schema digest: sha256:d807e4e3f76f8fbefb8d0b5835663feebfe0d2b6a70f7b5c1e98b0fe86f2fb17
+
+## overturo-cr/2.10 — 2026-10-12 (additive)
+
+Compatibility: additive.
+
+- `extensions.collection_channel`, `extensions.collection_platform`: where and
+  by whom a decision was captured, with the attestation boundary stated in the
+  description.
+- `extensions.wording_drift`: the attested-versus-published wording verdict for
+  decisions captured outside Overturo's surfaces.
+
+Schema digest: sha256:72821ef97a8ad39df42374684b206455b8b14f9fd31c2aa4264007e73b3c7bd5
+
 ## overturo-cr/2.9 — 2026-09-12 (editorial)
 
 Compatibility: editorial — no member, enum or rule changed.

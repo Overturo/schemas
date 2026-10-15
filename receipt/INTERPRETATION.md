@@ -1,4 +1,4 @@
-# Interpretation — `overturo-cr/2.9`
+# Interpretation — `overturo-cr/2.12`
 
 What the members of a record mean, which record kind carries what, and what
 conformance language applies. The member descriptions below are the schema's
@@ -11,6 +11,8 @@ own text; this document adds only what no schema field holds.
 - **`authorization_record`** — Authorization records are durable evidence of a delegated-authority commitment. Every commitment freezes exactly one record at activation; lifecycle history is derived at render time and never rewrites the frozen record. A held runtime receipt resolves into the same record through the references both already carry (the dispute kit's join slice — see the verification guide), and every agent-side fact is provenance-labeled: platform-attested registration facts versus operator-declared metadata, never blurred. *Aligned only, unless the record carries a personal-data slice (a pii_processing section): pure authority semantics are outside the standard's subject matter.*
 
 Absence is meaningful throughout: a field the platform cannot state truthfully is omitted, never guessed — each field's absence semantics are documented in the schema itself.
+
+Overturo proves when the decision was recorded, which wording was in force, who attested it and that nothing has changed since; for a record an organisation captured in its own form, Overturo does not vouch that the control was shown unticked; for a record captured through the embedded field, Overturo rendered the control, showed it unticked and recorded the person's own change, and does not vouch for what the page placed around it.
 
 ## Conformance language
 
@@ -53,6 +55,13 @@ standard-named carries non-standard semantics.
 - **`accountability_record`** — Structural slot: the agent accountability record reference in effect at activation. Documented-absent until that member ships.
 - **`agent_disclosures`** — Consent and notice records only: the AI agents disclosed to the human this record belongs to — one entry per agent, EU AI Act Art. 50 aligned. A disclosure entry proves NOTICE (the human was told), never grant or authority: the commitment story lives in authorization records, and this array is schema-forbidden there. Present exactly when the flow disclosed agents (platform provenance) or the operator declared an out-of-band disclosure (declared provenance). Carries agent-side references only — never the counterparty's identity (the anonymous kind stays anonymous through these fields).
 - **`signature_evidence`** — Signing-party verification evidence: one entry per completed evidence envelope anchored to the signing party, sorted by completed_at. Pointer + digest only — verdict/claim CONTENT lives in the agreement export and evidence packages, never here. Present on consent records only, and only when the signing party's transaction carries completed evidence; honest-absent otherwise.
+- **`collection_channel`** — Where and by whom the decision was captured. hosted and embedded are Overturo-rendered; embedded_field and embedded_field_browser are Overturo-rendered controls placed inside the organisation's own form (committed by its server, or by the browser at lower assurance) and carry rendering_evidence; form_capture and form_capture_browser were captured in the organisation's own form by its own control (committed by its server, or by the browser at lower assurance); form_platform_webhook was captured in a hosted form builder and delivered by its signed webhook; controller_attested was posted by the organisation's server; imported was loaded from the organisation's historical records with its original capture time. For hosted, embedded, embedded_field and embedded_field_browser the control was rendered by Overturo. For every other channel Overturo attests when the decision was recorded, which wording was in force, who attested it and that nothing has changed since; it does not attest how the control was shown.
+- **`collection_platform`** — The hosted form platform that delivered a form_platform_webhook decision (for example typeform). Absent for every other channel.
+- **`wording_drift`** — Whether the wording the organisation attested its form displayed matched the wording published for the flow at the time of the decision. Recorded, never refused; absent when nothing was attested.
+- **`captured_at`** — When the organisation captured the decision in its own form, platform or records — the decision event's time for a captured record. An import keeps the organisation's original capture time here.
+- **`recorded_at`** — When Overturo recorded the captured decision (the commit). For an import this is later than captured_at by design; the declared duration counts from captured_at.
+- **`presentation_attested`** — Purpose keys whose presentation (that the control was optional) was attested by the organisation rather than read from the form platform's definition. Absent when every presentation fact was read or observed.
+- **`rendering_evidence`** — Present only for a control Overturo rendered inside the organisation's form (collection_channel embedded_field or embedded_field_browser): who rendered it, the notice version shown, when, the host page's origin as asserted by the browser, whether the person changed the control with a trusted gesture, and the control's visibility when the form was submitted, with the kind of visibility measurement the browser offered. Absent for every other channel.
 
 ## Event states
 

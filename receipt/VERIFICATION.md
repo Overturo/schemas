@@ -1,7 +1,7 @@
 <!-- audit-public-language: allow — a verification specification must name
      its signature algorithm and encoding precisely; a euphemism here would
      make records unverifiable. -->
-# Verification — signed records under `overturo-cr/2.9`
+# Verification — signed records under `overturo-cr/2.12`
 
 How a third party checks a signed record offline: the envelope, the
 canonical bytes, where the keys are published, and worked examples. The

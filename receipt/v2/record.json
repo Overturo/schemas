@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://overturo.com/schemas/receipt/v2/record.json",
-  "title": "Overturo consent record (overturo-cr/2.9)",
+  "title": "Overturo consent record (overturo-cr/2.12)",
   "description": "The canonical record frozen at fulfillment, organized into the ISO/IEC TS 27560:2023 sections, in three kinds: consent records; notice records (notice-not-consent mechanisms and anonymous completions; Kantara ANCR Stage-1 aligned); and authorization records. The `extensions` member carries platform facts the standard has no slot for, per the standards' own non-conflicting-additions allowance. Renders add a render-time `receipt_metadata` section NOT described here: the frozen record never carries render state. The authorization_record kind is durable evidence of a delegated-authority commitment. Its `authority` section is 27560-ALIGNED structure, not PII-processing subject matter; conformance language applies only to records carrying a pii_processing section.",
   "type": "object",
   "additionalProperties": false,
@@ -23,7 +23,7 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "overturo-cr/2.9"
+          "const": "overturo-cr/2.12"
         },
         "conforms_to": {
           "const": "ISO/IEC TS 27560:2023"
@@ -686,6 +686,105 @@
                 "type": "string",
                 "minLength": 1,
                 "description": "When the evidence completed (ISO 8601); the entries are sorted ascending by this value."
+              }
+            }
+          }
+        },
+        "collection_channel": {
+          "type": "string",
+          "enum": [
+            "hosted",
+            "embedded",
+            "form_capture",
+            "form_capture_browser",
+            "form_platform_webhook",
+            "controller_attested",
+            "imported",
+            "embedded_field",
+            "embedded_field_browser"
+          ],
+          "description": "Where and by whom the decision was captured. hosted and embedded are Overturo-rendered; embedded_field and embedded_field_browser are Overturo-rendered controls placed inside the organisation's own form (committed by its server, or by the browser at lower assurance) and carry rendering_evidence; form_capture and form_capture_browser were captured in the organisation's own form by its own control (committed by its server, or by the browser at lower assurance); form_platform_webhook was captured in a hosted form builder and delivered by its signed webhook; controller_attested was posted by the organisation's server; imported was loaded from the organisation's historical records with its original capture time. For hosted, embedded, embedded_field and embedded_field_browser the control was rendered by Overturo. For every other channel Overturo attests when the decision was recorded, which wording was in force, who attested it and that nothing has changed since; it does not attest how the control was shown."
+        },
+        "collection_platform": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The hosted form platform that delivered a form_platform_webhook decision (for example typeform). Absent for every other channel."
+        },
+        "wording_drift": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "match",
+                "wording_drift"
+              ]
+            },
+            "attested_hash": {
+              "type": "string",
+              "description": "Digest of the notice text the organisation attested its form displayed, as supplied with the capture."
+            },
+            "published_hash": {
+              "type": "string",
+              "description": "Digest of the wording published for the flow in the decision's locale at the time of the decision."
+            },
+            "purposes": {
+              "type": "object",
+              "description": "Per purpose key, when the wording was attested purpose by purpose (a form platform's field title, or the snippet's label digests): the attested and published digests and the verdict for that purpose.",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "attested_hash": {"type": "string", "description": "Digest of the text attested for this purpose."},
+                  "published_hash": {"type": "string", "description": "Digest of the wording published for this purpose at the time of the decision."},
+                  "verdict": {"type": "string", "enum": ["match", "wording_drift"]}
+                }
+              }
+            }
+          },
+          "description": "Whether the wording the organisation attested its form displayed matched the wording published for the flow at the time of the decision. Recorded, never refused; absent when nothing was attested."
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the organisation captured the decision in its own form, platform or records — the decision event's time for a captured record. An import keeps the organisation's original capture time here."
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When Overturo recorded the captured decision (the commit). For an import this is later than captured_at by design; the declared duration counts from captured_at."
+        },
+        "presentation_attested": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Purpose keys whose presentation (that the control was optional) was attested by the organisation rather than read from the form platform's definition. Absent when every presentation fact was read or observed."
+        },
+        "rendering_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rendered_by", "notice_version", "rendered_at", "host_origin", "trusted_gesture", "visibility"],
+          "description": "Present only for a control Overturo rendered inside the organisation's form (collection_channel embedded_field or embedded_field_browser): who rendered it, the notice version shown, when, the host page's origin as asserted by the browser, whether the person changed the control with a trusted gesture, and the control's visibility when the form was submitted, with the kind of visibility measurement the browser offered. Absent for every other channel.",
+          "properties": {
+            "rendered_by": {"const": "overturo"},
+            "notice_version": {"type": "string", "description": "The presented notice version reference (<flow>/notice/v<n>), the version the receipt's privacy notice cites."},
+            "rendered_at": {"type": "string", "format": "date-time", "description": "When the control was rendered."},
+            "host_origin": {"type": "string", "description": "The origin of the page that framed the control, as the browser asserted it in the handshake."},
+            "trusted_gesture": {"type": "string", "enum": ["trusted", "unchanged", "untrusted", "unknown"], "description": "trusted: every change came from the person's own input event; unchanged: the person never changed the control; untrusted: a synthetic change was seen and reverted; unknown: the fact was not reported."},
+            "visibility": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "description": "The control's visibility when the form was submitted. occlusion_aware (where the browser offers it) detects a covered, faded or transformed control; geometric detects clipping and off-screen placement but not an overlay; unknown when nothing was measured.",
+              "properties": {
+                "kind": {"type": "string", "enum": ["occlusion_aware", "geometric", "unknown"], "description": "How visibility was measured: occlusion_aware (covered, faded or transformed controls read as not visible), geometric (intersection with the viewport: clipping and off-screen placement, not overlays), or unknown."},
+                "visible": {"type": "boolean", "description": "Whether the control was visible by the measurement's own rule at submit (occlusion_aware: not occluded; geometric: fully within the viewport)."},
+                "fraction": {"type": "number", "minimum": 0, "maximum": 1, "description": "The fraction of the control's box within the top-level viewport at submit (0 to 1)."},
+                "width": {"type": "integer", "minimum": 0, "description": "The control's rendered width in CSS pixels at submit."},
+                "height": {"type": "integer", "minimum": 0, "description": "The control's rendered height in CSS pixels at submit."}
               }
             }
           }

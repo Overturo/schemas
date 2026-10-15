@@ -1,4 +1,4 @@
-# The Overturo record schema (`overturo-cr/2.9`)
+# The Overturo record schema (`overturo-cr/2.12`)
 
 This directory publishes the JSON Schema for consent, notice and authorization
 records — the receipts the Overturo platform issues — together with its
@@ -10,7 +10,7 @@ interpretation and its verification guide.
   is served at `https://overturo.com/schemas/receipt/vN/record.json`.
 - **Conforms to:** ISO/IEC TS 27560:2023.
 - **This copy:** `v2/record.json`, byte-equal to the file served at the
-  identifier (digest `sha256:886fb8e380c73a7d5499b13a034b1c170350d5f65c78f4529afb495545c7df5a`). The product's build holds the two equal;
+  identifier (digest `sha256:e871b444a0f3cf1222840618bc860a4523c851fd4ac9ff50e6185c99d35f7cfb`). The product's build holds the two equal;
   the served file and this file are the same bytes.
 - **History:** [CHANGELOG.md](./CHANGELOG.md) — every version since 2.0 and
   every state the served file has been in since this repository governs it.
