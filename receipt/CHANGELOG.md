@@ -8,6 +8,49 @@ holds the head entry's digest equal to the served file. Entries before
 governance starts with the entry above them. Versions 2.1 and 2.2 were never
 published.
 
+## overturo-cr/2.14 — 2026-10-24 (additive)
+
+Compatibility: additive — one `event_channel` value added; nothing removed,
+renamed or re-typed.
+
+- `event[].event_channel` gains `assistant`: the person made the withdrawal or
+  objection through a connected assistant (an AI client acting for them with
+  their consent). It is the person's own act, recorded as such;
+  the assistant never decides.
+
+Schema digest: sha256:0b57395421a8bd1469d1c212870f4fdb0e0dd9fa12c6aec1b824e6f62deab85c
+
+## overturo-cr/2.13 — 2026-10-15 (additive)
+
+Compatibility: additive — one optional member and one `event_state` value
+added; nothing removed, renamed or re-typed.
+
+- `event[].event_channel` (optional, closed enum) names where a withdrawal or
+  objection was made from: the person's records (`records_page`), the
+  management link in their email (`management_link`), the record link in their
+  receipt (`record_link`), the organisation's mailing tool (`mailing_tool`), a
+  newer record from the organisation's form (`re_attestation`), the
+  organisation (`organisation`), its systems (`api`), the end of the term
+  (`expiry`), the platform's subject sweep (`sweep`), or `unspecified` for a
+  change whose evidence predates the channel. Present only on appended
+  withdrawal and objection events; absent on the frozen prefix (206 D7).
+- `event[].event_state` gains `objection recorded`: the right to object
+  exercised after the decision on a legitimate-interest purpose, scoped by
+  `purpose_id` (206 D2).
+
+Schema digest: sha256:1fd166eb725083d19edda9f77d6a36c40b59e64c9fad9d524c05ec00bc3da03b
+
+## overturo-cr/2.12 — 2026-10-15 (editorial)
+
+Compatibility: editorial — no member, enum or rule changed.
+
+- The published interpretation's claim boundary names the control Overturo
+  renders inside an organisation's form by its public name, "the Overturo
+  field"; the `collection_channel` values `embedded_field` and
+  `embedded_field_browser` are unchanged on the wire.
+
+Schema digest: sha256:e871b444a0f3cf1222840618bc860a4523c851fd4ac9ff50e6185c99d35f7cfb
+
 ## overturo-cr/2.12 — 2026-10-12 (additive)
 
 Compatibility: additive.

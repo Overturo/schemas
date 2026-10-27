@@ -1,7 +1,7 @@
 <!-- audit-public-language: allow — a verification specification must name
      its signature algorithm and encoding precisely; a euphemism here would
      make records unverifiable. -->
-# Verification — signed records under `overturo-cr/2.12`
+# Verification — signed records under `overturo-cr/2.14`
 
 How a third party checks a signed record offline: the envelope, the
 canonical bytes, where the keys are published, and worked examples. The
@@ -214,14 +214,14 @@ and the record page's download group:
 Every honored runtime receipt (the short-lived authorization JWT) and
 the durable record are two faces of one authorization, joined by
 references both already carry: the JWT's claims include `grant_id` and
-`chronicle_id`; the durable record's `record.record_id` is the same
+`record_id`; the durable record's `record.record_id` is the same
 grant reference, and the dispute kit's `runtime_join.consumptions`
-lists each issued receipt's `jti`, `chronicle_id`, `issued_at`,
+lists each issued receipt's `jti`, `record_id`, `issued_at`,
 `decision`, and `context_hash`. To check a receipt you honored months
 ago: find your `jti` in the kit's consumption slice and confirm the
 `grant_id` claim matches the signed record's `record_id`. Completion
 credentials repeat the same pair (`original_receipt_jti`,
-`chronicle_id`).
+`record_id`).
 
 Two boundary facts, stated plainly. The runtime receipt's TTL bounds
 **honoring**, not evidence — an expired receipt still verifies

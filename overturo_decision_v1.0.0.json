@@ -68,7 +68,7 @@
       "type": "string",
       "description": "Rails request.request_id echo. Also returned in X-Request-Id response header."
     },
-    "chronicle_id": {
+    "record_id": {
       "type": ["string", "null"]
     },
     "overturo_decision_schema_version": {

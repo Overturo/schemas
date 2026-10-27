@@ -1,4 +1,4 @@
-# Interpretation — `overturo-cr/2.12`
+# Interpretation — `overturo-cr/2.14`
 
 What the members of a record mean, which record kind carries what, and what
 conformance language applies. The member descriptions below are the schema's
@@ -12,7 +12,9 @@ own text; this document adds only what no schema field holds.
 
 Absence is meaningful throughout: a field the platform cannot state truthfully is omitted, never guessed — each field's absence semantics are documented in the schema itself.
 
-Overturo proves when the decision was recorded, which wording was in force, who attested it and that nothing has changed since; for a record an organisation captured in its own form, Overturo does not vouch that the control was shown unticked; for a record captured through the embedded field, Overturo rendered the control, showed it unticked and recorded the person's own change, and does not vouch for what the page placed around it.
+Every withdrawal and objection event names where it was made from: the person's own records, the link in their email, the link in their receipt, the organisation's mailing tool, a newer record from the organisation's form, the organisation or its systems, the end of the term, the platform's subject sweep, or the person acting through a connected assistant. A change made in the organisation's mailing tool is recorded as the person's withdrawal, never as a consent.
+
+Overturo proves when the decision was recorded, which wording was in force, who attested it and that nothing has changed since; for a record an organisation captured in its own form, Overturo does not vouch that the control was shown unticked; for a record captured through the Overturo field, Overturo rendered the control, showed it unticked and recorded the person's own change, and does not vouch for what the page placed around it.
 
 ## Conformance language
 
@@ -77,6 +79,7 @@ at read time.
 - `consent refused`
 - `consent withdrawn`
 - `consent expired`
+- `objection recorded`
 - `authority requested`
 - `authority granted`
 - `authority exercised`

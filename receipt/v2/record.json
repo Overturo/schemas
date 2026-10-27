@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://overturo.com/schemas/receipt/v2/record.json",
-  "title": "Overturo consent record (overturo-cr/2.12)",
+  "title": "Overturo consent record (overturo-cr/2.14)",
   "description": "The canonical record frozen at fulfillment, organized into the ISO/IEC TS 27560:2023 sections, in three kinds: consent records; notice records (notice-not-consent mechanisms and anonymous completions; Kantara ANCR Stage-1 aligned); and authorization records. The `extensions` member carries platform facts the standard has no slot for, per the standards' own non-conflicting-additions allowance. Renders add a render-time `receipt_metadata` section NOT described here: the frozen record never carries render state. The authorization_record kind is durable evidence of a delegated-authority commitment. Its `authority` section is 27560-ALIGNED structure, not PII-processing subject matter; conformance language applies only to records carrying a pii_processing section.",
   "type": "object",
   "additionalProperties": false,
@@ -23,7 +23,7 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "overturo-cr/2.12"
+          "const": "overturo-cr/2.14"
         },
         "conforms_to": {
           "const": "ISO/IEC TS 27560:2023"
@@ -448,6 +448,7 @@
               "consent refused",
               "consent withdrawn",
               "consent expired",
+              "objection recorded",
               "authority requested",
               "authority granted",
               "authority exercised",
@@ -481,6 +482,23 @@
             "type": "string",
             "minLength": 1,
             "description": "Approval-scoped rows: the public reference of the human decision, matching the oversight evidence package's rows. Requested rows may lack it (the reference exists only once the decision row does)."
+          },
+          "event_channel": {
+            "type": "string",
+            "enum": [
+              "records_page",
+              "management_link",
+              "record_link",
+              "mailing_tool",
+              "re_attestation",
+              "organisation",
+              "api",
+              "expiry",
+              "sweep",
+              "assistant",
+              "unspecified"
+            ],
+            "description": "Where the change was made from (overturo-cr/2.13; 'assistant' added in 2.14): the person's records, the management link in their email, the record link in their receipt, the organisation's mailing tool, a newer record from the organisation's form, the organisation, its systems, the end of the term, the platform's subject sweep, or the person acting through a connected assistant. Present only on appended withdrawal and objection events; absent on the frozen prefix. 'unspecified' names a change whose evidence predates the channel."
           }
         }
       }
